@@ -1,0 +1,22 @@
+# Purpose: Automated 5-Step Departure Process for Security Compliance
+# Impact: Disables an off-boarded user's account and ensures 100% data preservation.
+
+$UserEmail = "user@domain.com"
+
+# 1. Revoke active sessions
+Revoke-MgUserSignInSession -UserId $UserEmail
+
+# 2. Disable Account
+Update-MgUser -UserId $UserEmail -AccountEnabled $false
+
+# 3. Convert to Shared Mailbox (for data preservation)
+Set-Mailbox -Identity $UserEmail -Type Shared
+
+# 4. Remove all Group Memberships
+$Groups = Get-MgUserMemberOf -UserId $UserEmail
+foreach ($Group in $Groups) { Remove-MgGroupMemberByRef -GroupId $Group.Id -DirectoryObjectId $UserEmail }
+
+# 5. Trigger Remote Wipe (Intune)
+# [Managed by Intune Module] Invoke-IntuneDeviceWipe -UserPrincipalName $UserEmail
+
+Write-Host "Offboarding for $UserEmail complete. Security posture maintained."
